@@ -65,32 +65,39 @@ def chunk_hamming_distance(chunk_a, chunk_b):
     return distance
 
 
-def hamming_distance(pairs):
-    return [chunk_hamming_distance(a, b) for a, b in pairs]
+def hamming_distance(pairs, key_length):
+    score = 0
+    for a, b in pairs:
+        score += chunk_hamming_distance(a, b)/key_length
+    return key_length, score
 
 
-def test_key_length(chunks):
-    key_length = len(chunks[0])
+def test_key_length(chunks, key_length):
     n = len(chunks)
-
     pairs = [(chunks[i], chunks[j]) for i in range(n) for j in range(i+1, n)]
-
-    distances = hamming_distance(pairs)
-    return key_length, min(distances)
+    return hamming_distance(pairs, key_length)
 
 
 def recover_key_length(base64_ciphertext):
     max_key_length = len(base64_ciphertext)
-    min_distance = float("inf")
+    min_score = float("inf")
     key_length = float("inf")
+    scores = []
     for i in range(1, max_key_length):
         sp = split_raw_bytes(base64_ciphertext, i)
         if len(sp) == 1:
             continue
-        t_key_length, t_distance = test_key_length(sp)
-        if min_distance > t_distance:
+        t_key_length, t_score = test_key_length(sp, i)
+        scores.append((t_key_length, t_score))
+        if min_score > t_score:
             key_length = t_key_length
-            min_distance = t_distance
-    return key_length, min_distance
+            min_score = t_score
+    return key_length, min_score, scores
 
-print(recover_key_length(base64_ciphertext))
+key_length, min_score, scores = recover_key_length(base64_ciphertext)
+
+print(key_length, min_score)
+
+for s in sorted(scores, key=lambda a: a[1]):
+    print(s)
+# print(int_hamming_distance(539840637068609577218455531587,369307302017048399005276503216))
