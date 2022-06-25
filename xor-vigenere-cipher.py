@@ -1,6 +1,7 @@
 from ast import BitAnd
 import base64
 from numpy import argmin
+from utils import printable
 # from bitstring import BitArray
 
 
@@ -93,4 +94,6 @@ def recover_key_length(base64_ciphertext):
             min_distance = t_distance
     return key_length, min_distance
 
-print(recover_key_length(base64_ciphertext))
+byte_arr = split_raw_bytes(base64_ciphertext, 10)[0]
+printable_str = printable(byte_arr)
+print(printable_str)
