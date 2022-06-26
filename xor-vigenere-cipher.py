@@ -1,6 +1,7 @@
 from ast import BitAnd
 import base64
 from numpy import argmin
+from utils import printable
 # from bitstring import BitArray
 
 
