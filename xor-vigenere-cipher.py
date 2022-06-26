@@ -55,7 +55,7 @@ def int_hamming_distance(a, b):
     return set_bits
 
 
-def chunk_hamming_distance(chunk_a, chunk_b, key_length):
+def chunk_hamming_distance(chunk_a, chunk_b):
     length_a = len(chunk_a)
     length_b = len(chunk_b)
     distance = abs(length_a - length_b) * 8
@@ -69,7 +69,8 @@ def hamming_distance(chunks, n, key_length):
     score = 0
     for i in range(n):
         for j in range(i+1, n):
-            score += chunk_hamming_distance(chunks[i], chunks[j], key_length)/key_length
+            score += chunk_hamming_distance(chunks[i],
+                                            chunks[j]) / (8*min(len(chunks[i]), len(chunks[j])))
     return key_length, score
 
 
@@ -79,7 +80,7 @@ def test_key_length(chunks, key_length):
 
 
 def recover_key_length(base64_ciphertext):
-    max_key_length = len(base64_ciphertext)
+    max_key_length = 256  # len(base64_ciphertext)
     min_score = float("inf")
     key_length = float("inf")
     scores = []
@@ -94,12 +95,11 @@ def recover_key_length(base64_ciphertext):
             min_score = t_score
     return key_length, min_score, scores
 
+def split_ciphertext(ct, n):
+    pass
 
-# key_length, min_score, scores = recover_key_length(base64_ciphertext)
+# m = "Este es un mensaje de prueba que estoy utilizando para ver si realmente funciona"
+# b64_m = "RXN0ZSBlcyB1biBtZW5zYWplIGRlIHBydWViYSBxdWUgZXN0b3kgdXRpbGl6YW5kbyBwYXJhIHZlciBzaSByZWFsbWVudGUgZnVuY2lvbmE="
+key_length, min_score, scores = recover_key_length(base64_ciphertext)
 
-# print(key_length, min_score)
-
-# for s in sorted(scores, key=lambda a: a[1]):
-#     print(s)
-print(split_raw_bytes(base64_ciphertext, 1)[0])
-# print(int_hamming_distance(539840637068609577218455531587,369307302017048399005276503216))
+print(key_length, min_score)
