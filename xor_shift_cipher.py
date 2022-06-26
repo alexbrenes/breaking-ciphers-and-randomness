@@ -61,3 +61,6 @@ def main():
     recovered_plaintext = recover_plaintext(ct)
     print(recovered_plaintext[0])
     print(recovered_plaintext[1])
+
+if __name__ == '__main__':
+    main()

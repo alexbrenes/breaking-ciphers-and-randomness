@@ -2,8 +2,7 @@ from ast import BitAnd
 import base64
 from numpy import argmin
 from utils import printable
-# from bitstring import BitArray
-
+from xor_shift_cipher import recover_plaintext
 
 base64_ciphertext = (
     "EjxYTxMKdwYaSBwcGTwfCBxHOwsGLRYdGwsBZSw8GhsaCncIEwdDVQM6AQ1OEzwJEWwJ"
@@ -94,13 +93,27 @@ def recover_key_length(base64_ciphertext):
         if min_score > t_score:
             key_length = t_key_length
             min_score = t_score
-    return key_length, min_score, scores
+    return key_length, min_score
+
 
 def split_ciphertext(ct, n):
-    pass
+    m = []
+    for i in range(0, len(ct), n):
+        m.append(recover_plaintext(ct[i:i + n]))
+    return m
 
-# m = "Este es un mensaje de prueba que estoy utilizando para ver si realmente funciona"
-# b64_m = "RXN0ZSBlcyB1biBtZW5zYWplIGRlIHBydWViYSBxdWUgZXN0b3kgdXRpbGl6YW5kbyBwYXJhIHZlciBzaSByZWFsbWVudGUgZnVuY2lvbmE="
-key_length, min_score, scores = recover_key_length(base64_ciphertext)
 
-print(key_length, min_score)
+def print_recovered_plaintext(m):
+    for m_i in m:
+        print(m_i)
+
+
+def main():
+    key_length, _ = recover_key_length(base64_ciphertext)
+    ct = base64.b64decode(base64_ciphertext)
+    m = split_ciphertext(ct, key_length)
+    print_recovered_plaintext(m)
+
+
+if __name__ == '__main__':
+    main()
