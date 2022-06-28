@@ -1,7 +1,5 @@
 import base64
-from itertools import cycle
 from utils import english_statistical_distribution
-from collections import deque
 
 base64_ciphertext = (
     "KxRIRjMSEgMUFQkIRhIOA0YKBxEfAxRGEQcVRgdGCwcIRgkARgdGFBMB"

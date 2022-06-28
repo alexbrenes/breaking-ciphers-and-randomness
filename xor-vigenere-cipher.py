@@ -1,7 +1,6 @@
-
 import base64
 from itertools import cycle, islice
-from xor_shift_cipher import plaintexts_freqs, recover_plaintext
+from xor_shift_cipher import recover_plaintext
 
 
 base64_ciphertext = (
