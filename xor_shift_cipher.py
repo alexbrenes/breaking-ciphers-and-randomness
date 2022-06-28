@@ -1,7 +1,6 @@
 import base64
 from itertools import cycle
-from numpy import argmin
-from utils import printable, english_statistical_distribution
+from utils import english_statistical_distribution
 from collections import deque
 
 base64_ciphertext = (
@@ -17,13 +16,8 @@ def xor(msg, key):
     return bytes(a ^ key for a in msg)
 
 
-def compute_frequencies(p):
-    total_freq = [0 for _ in range(26)]
-    for c in p:
-        if ord('a') <= ord(c) <= ord('z') or ord('A') <= ord(c) <= ord('Z'):
-            total_freq[(ord(c) | 32) - ord('a')] += 1
-
-    return [f/len(p) for f in total_freq]
+def compute_frequencies(ct, n):
+    return [ct.count(b) / n for b in range(256)]
 
 
 def plaintexts_freqs(plaintexts):
@@ -46,21 +40,40 @@ Returns the index of the plaintext with the minimum statistical distance
 
 
 def identify_plaintext(alphabet, plaintexts):
-    return argmin([statistical_distance(alphabet, pt) for pt in plaintexts])
+    min_dist = float("inf")
+    idx = -1
+    for i, pt in enumerate(plaintexts):
+        temp = statistical_distance(alphabet, pt)
+        if temp <= min_dist:
+            min_dist = temp
+            idx = i
+    return idx
 
 
 def recover_plaintext(ct):
-    plaintexts = [printable(xor(ct, key)) for key in range(1, 256)]
-    freqs = plaintexts_freqs(plaintexts)
-    i = identify_plaintext(english_statistical_distribution, freqs)
-    return i, plaintexts[i]
+    n = len(ct)
+    freqs = compute_frequencies(ct, n)
+    min_dist = float("inf")
+    min_key = 0
+    for key in range(1, 256):
+        distance = 0
+        for i, frequence in enumerate(english_statistical_distribution):
+            distance += abs(frequence -
+                            freqs[(i+ord('a')) ^ key])
+        if min_dist > distance:
+            min_dist = distance
+            min_key = key
+    plaintext = xor(ct, min_key)
+    return min_dist, min_key, plaintext
 
 
 def main():
     ct = base64.b64decode(base64_ciphertext)
     recovered_plaintext = recover_plaintext(ct)
-    print(recovered_plaintext[0])
-    print(recovered_plaintext[1])
+    print("Avg = ", recovered_plaintext[0])
+    print("key = ", recovered_plaintext[1])
+    print("Message = ", recovered_plaintext[2].decode('ascii'))
+
 
 if __name__ == '__main__':
     main()

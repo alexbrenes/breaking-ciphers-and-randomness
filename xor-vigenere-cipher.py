@@ -1,8 +1,8 @@
-from ast import BitAnd
+
 import base64
-from numpy import argmin
-from utils import printable
-from xor_shift_cipher import recover_plaintext
+from itertools import cycle, islice
+from xor_shift_cipher import plaintexts_freqs, recover_plaintext
+
 
 base64_ciphertext = (
     "EjxYTxMKdwYaSBwcGTwfCBxHOwsGLRYdGwsBZSw8GhsaCncIEwdDVQM6AQ1OEzwJEWwJ"
@@ -34,13 +34,8 @@ base64_ciphertext = (
 )
 
 
-def split_raw_bytes(base64_str, n=-1):
-    if n <= 0:
-        n = len(base64_str)
-    padding = 0
-    if n % 4 != 0:
-        padding = abs(4 - n % 4)
-    ct = base64.b64decode(base64_str.ljust(n + padding, "="))
+def split_raw_bytes(base64_str, n):
+    ct = base64.b64decode(base64_str)
     return [ct[i:i + n] for i in range(0, len(ct), n)]
 
 
@@ -65,54 +60,67 @@ def chunk_hamming_distance(chunk_a, chunk_b):
     return distance
 
 
-def hamming_distance(chunks, n, key_length):
+def hamming_distance(chunks, n):
     score = 0
+    distances = 0
     for i in range(n):
         for j in range(i+1, n):
+            distances += 1
             score += chunk_hamming_distance(chunks[i],
-                                            chunks[j]) / (8*min(len(chunks[i]), len(chunks[j])))
-    return key_length, score
+                                            chunks[j])  # / (8*min(len(chunks[i]), len(chunks[j])))
+
+    return score / distances  # Average distance between chunks
 
 
-def test_key_length(chunks, key_length):
+def test_key_length(chunks):
     n = len(chunks)
-    return hamming_distance(chunks, n, key_length)
+    return hamming_distance(chunks, n)
 
 
 def recover_key_length(base64_ciphertext):
-    max_key_length = 256  # len(base64_ciphertext)
-    min_score = float("inf")
-    key_length = float("inf")
     scores = []
-    for i in range(1, max_key_length):
+    for i in range(2, 32):
         sp = split_raw_bytes(base64_ciphertext, i)
-        if len(sp) == 1:
-            continue
-        t_key_length, t_score = test_key_length(sp, i)
-        scores.append((t_key_length, t_score))
-        if min_score > t_score:
-            key_length = t_key_length
-            min_score = t_score
-    return key_length, min_score
+        score = test_key_length(sp) / i  # Normalized score
+        scores.append((i, score))
+    return sorted(scores, key=lambda x: x[1])
 
 
 def split_ciphertext(ct, n):
-    m = []
+    sp = []
     for i in range(0, len(ct), n):
-        m.append(recover_plaintext(ct[i:i + n]))
-    return m
+        sp.append(ct[i:i + n])
+    return sp
 
 
-def print_recovered_plaintext(m):
+def print_iterable(m, sepv="\n"):
     for m_i in m:
-        print(m_i)
+        print(m_i, end=sepv)
+
+
+def possible_keys(ct, key_lentgh):
+    ct_chunks = [ct[i::key_lentgh] for i in range(key_lentgh)]
+    cracks = [recover_plaintext(chunk) for chunk in ct_chunks]
+    combined_score = sum(distance for distance, _, _ in cracks) / key_lentgh
+    key = bytes(key for _, key, _ in cracks)
+    return combined_score, key
+
+
+def decrypt_v(key, ct):
+    key = islice(cycle(key), len(ct))
+    return bytes(a ^ b for a, b in zip(ct, key))
 
 
 def main():
-    key_length, _ = recover_key_length(base64_ciphertext)
+    key_lengths = recover_key_length(base64_ciphertext)
     ct = base64.b64decode(base64_ciphertext)
-    m = split_ciphertext(ct, key_length)
-    print_recovered_plaintext(m)
+    keys = [possible_keys(ct, key)
+            for key, _ in key_lengths]
+    recovered_plaintext = keys[0]
+    plaintext = decrypt_v(recovered_plaintext[1], ct).decode('ascii')
+    print("Avg = ", recovered_plaintext[0])
+    print("key = ", recovered_plaintext[1])
+    print("Message = ", recovered_plaintext[2].decode('ascii'))
 
 
 if __name__ == '__main__':
