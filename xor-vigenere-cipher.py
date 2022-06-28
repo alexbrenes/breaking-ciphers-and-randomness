@@ -67,7 +67,7 @@ def hamming_distance(chunks, n):
         for j in range(i+1, n):
             distances += 1
             score += chunk_hamming_distance(chunks[i],
-                                            chunks[j])  # / (8*min(len(chunks[i]), len(chunks[j])))
+                                            chunks[j])
 
     return score / distances  # Average distance between chunks
 
@@ -118,9 +118,8 @@ def main():
             for key, _ in key_lengths]
     recovered_plaintext = keys[0]
     plaintext = decrypt_v(recovered_plaintext[1], ct).decode('ascii')
-    print("Avg = ", recovered_plaintext[0])
     print("key = ", recovered_plaintext[1])
-    print("Message = ", recovered_plaintext[2].decode('ascii'))
+    print("Message = ", plaintext)
 
 
 if __name__ == '__main__':

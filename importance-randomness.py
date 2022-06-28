@@ -59,11 +59,11 @@ class MSWS_PRNG:
     _low = _u32
 
     def next_int(self):
-        # prev = self.x % (1 << 32)
+        prev = self.x % (1 << 32)
         self.w = self._u64(self.w + self.s)
         self.x = self._u64(self.x * self.x + self.w)
         self.x = (self._low(self.x) << 32) | self._high(self.x)
-        return self.x
+        return prev
 
 
 class BreakMSWS_PRNG:
@@ -186,14 +186,30 @@ def recover_plaintext(base64_ciphertext):
     pr_list = [PRNG.next_int() for _ in range(ceil((n+1)/4))]
     keystream = b''.join([pr.to_bytes((pr.bit_length() + len(str(pr))) //
                                       8, byteorder='big') or b'\0' for pr in pr_list])
-    print(keystream.hex())
-    print(ct.hex())
     return xor_stream(keystream, ct)
 
 
+def generate_keystream(n):
+    s = 0xb5ad4eceda1ce2a9
+    # x = 206652953229950176
+    # w = 16181273350202832052
+    x, w = recover_x_w()
+    PRNG = MSWS_PRNG(s, w, x)
+    pr_list = [PRNG.next_int() for _ in range(ceil((n+1)/4))]
+    return b''.join([pr.to_bytes((pr.bit_length() + len(str(pr))) //
+                                 8, byteorder='big') or b'\0' for pr in pr_list])
+
+
+def crypt(m):
+    m_bytes = str.encode(m, 'ascii')
+    keystream = generate_keystream(ceil(len(m_bytes)/4))
+    ct = xor_stream(keystream, m_bytes)
+    return ''.join(a.rjust(2, '0') for a in ct)
+
+
 def main():
-    # print(recover_x_w())
-    print(recover_plaintext(base64_ciphertext))
+    rc = recover_plaintext(base64_ciphertext)
+    print(''.join(rc))
 
 
 if __name__ == "__main__":

@@ -60,6 +60,7 @@ def recover_plaintext(ct):
         for i, frequence in enumerate(english_statistical_distribution):
             distance += abs(frequence -
                             freqs[(i+ord('a')) ^ key])
+        distance /= 2
         if min_dist > distance:
             min_dist = distance
             min_key = key
@@ -70,7 +71,6 @@ def recover_plaintext(ct):
 def main():
     ct = base64.b64decode(base64_ciphertext)
     recovered_plaintext = recover_plaintext(ct)
-    print("Avg = ", recovered_plaintext[0])
     print("key = ", recovered_plaintext[1])
     print("Message = ", recovered_plaintext[2].decode('ascii'))
 
